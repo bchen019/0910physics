@@ -1,0 +1,2684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>平抛运动</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        padding: 30px 0;
+        background: #f5f6f8;
+        color: #1c1c28;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .card {
+        width: min(1200px, 96vw);
+        margin: 0 auto;
+        background: #ffffff;
+        border: 1px solid #e2e5e9;
+        border-radius: 10px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    /* =========================
+       标题
+       ========================= */
+
+    .title-area {
+        padding: 22px 28px 12px;
+    }
+
+    .title {
+        margin: 0;
+        font-size: 25px;
+        font-weight: 500;
+        color: #1e4696;
+    }
+
+    /* =========================
+       SVG 区域
+       ========================= */
+
+    .scene-wrapper {
+        position: relative;
+        width: 100%;
+        padding: 0 20px;
+    }
+
+    .scene {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+
+    /* =========================
+       时间轴
+       ========================= */
+
+    .timeline-group {
+        position: absolute;
+        top: 20px;
+        right: 48px;
+        width: 250px;
+        z-index: 10;
+    }
+
+    .timeline-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3px;
+        color: #555b64;
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .timeline-label .timeline-title {
+        color: #1e4696;
+        font-weight: 500;
+    }
+
+    .timeline-label .timeline-max {
+        font-family: Menlo, Consolas, monospace;
+        color: #777d86;
+    }
+
+    .timeline {
+        display: block;
+        width: 100%;
+        height: 20px;
+        margin: 0;
+        padding: 0;
+        accent-color: #1e4696;
+        cursor: pointer;
+    }
+
+    /* =========================
+       坐标轴
+       ========================= */
+
+    .axis {
+        stroke: #30343b;
+        stroke-width: 2;
+    }
+
+    .axis-arrow {
+        fill: #30343b;
+    }
+
+    .tick {
+        stroke: #555b64;
+        stroke-width: 1.3;
+    }
+
+    .tick-label {
+        fill: #555b64;
+        font-size: 13px;
+        font-family: Menlo, Consolas, monospace;
+    }
+
+    .axis-label {
+        fill: #30343b;
+        font-size: 17px;
+        font-style: italic;
+    }
+
+    /* =========================
+       抛物线
+       ========================= */
+
+    .trajectory {
+        fill: none;
+        stroke: #30343b;
+        stroke-width: 2.2;
+    }
+
+    /* =========================
+       运动物体
+       ========================= */
+
+    .point {
+        fill: #d9090a;
+    }
+
+    .initial-point {
+        fill: #ffffff;
+        stroke: #1e4696;
+        stroke-width: 2.5;
+    }
+
+    /* =========================
+       位移矢量
+       ========================= */
+
+    .position-vector {
+        stroke: #1e4696;
+        stroke-width: 2.8;
+        stroke-linecap: round;
+    }
+
+    .position-arrow {
+        fill: #1e4696;
+    }
+
+    /* =========================
+       位置投影点
+       ========================= */
+
+    .projection-point {
+        fill: #1e4696;
+    }
+
+    /* =========================
+       速度矢量
+       ========================= */
+
+    .velocity-vector {
+        stroke: #d9090a;
+        stroke-width: 3;
+        stroke-linecap: round;
+    }
+
+    .velocity-arrow {
+        fill: #d9090a;
+    }
+
+    .velocity-label {
+        fill: #d9090a;
+        font-size: 17px;
+        font-style: italic;
+    }
+
+    /* =========================
+       水平、竖直速度分量
+       ========================= */
+
+    .velocity-component {
+        stroke: #d9090a;
+        stroke-width: 2.4;
+        stroke-linecap: round;
+        stroke-dasharray: 7 5;
+    }
+
+    .velocity-component-arrow {
+        fill: #d9090a;
+    }
+
+    .component-label {
+        fill: #d9090a;
+        font-size: 15px;
+        font-style: italic;
+    }
+
+    /* =========================
+       角度标记
+       ========================= */
+
+    .angle-arc {
+        fill: none;
+        stroke: #d9090a;
+        stroke-width: 2;
+    }
+
+    .angle-label {
+        fill: #d9090a;
+        font-size: 15px;
+        font-style: italic;
+    }
+
+    /* =========================
+       速度反向延长线
+       ========================= */
+
+    .velocity-extension {
+        stroke: #d9090a;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-dasharray: 7 5;
+        opacity: 0.75;
+    }
+
+    /* =========================
+       反向延长线与 x 轴交点
+       ========================= */
+
+    .extension-point {
+        fill: #f28a8a;
+    }
+
+    /* =========================
+       交点坐标
+       ========================= */
+
+    .extension-label {
+        fill: #d9090a;
+        font-size: 20px;
+        font-family: Menlo, Consolas, monospace;
+    }
+
+    /* =========================
+       数据面板
+       ========================= */
+
+    .data-panel {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        border-top: 1px solid #e2e5e9;
+        background: #fafbfc;
+    }
+
+    .data-item {
+        padding: 17px 10px 19px;
+        text-align: center;
+        border-right: 1px solid #e2e5e9;
+    }
+
+    .data-item:last-child {
+        border-right: none;
+    }
+
+    .data-label {
+        margin-bottom: 6px;
+        font-size: 20px;
+        color: #555b64;
+    }
+
+    .data-value {
+        font-family: Menlo, Consolas, monospace;
+        font-size: 20px;
+        color: #1e4696;
+    }
+
+    /* =========================
+       控制区
+       ========================= */
+
+    .controls {
+        display: grid;
+        grid-template-columns: 4fr 1fr;
+        gap: 100px;
+        padding: 24px 28px;
+        border-top: 1px solid #e2e5e9;
+    }
+
+    .parameters {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+    }
+
+    .control-row {
+        display: grid;
+        grid-template-columns: 100px 1fr 100px;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .control-row label {
+        color: #555b64;
+        font-size: 15px;
+        white-space: nowrap;
+    }
+
+    input[type="range"] {
+        width: 100%;
+        accent-color: #1e4696;
+        cursor: pointer;
+    }
+
+    output {
+        text-align: right;
+        font-family: Menlo, Consolas, monospace;
+        color: #1e4696;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    /* =========================
+       重力
+       ========================= */
+
+    .gravity-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        color: #555b64;
+        font-size: 15px;
+        white-space: nowrap;
+    }
+
+    .gravity-title {
+        color: #555b64;
+        font-size: 15px;
+        white-space: nowrap;
+    }
+
+    .gravity-options {
+        display: flex;
+        gap: 28px;
+        color: #555b64;
+        font-size: 15px;
+    }
+
+    .gravity-options label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+    }
+
+    .gravity-options input {
+        accent-color: #1e4696;
+    }
+
+    /* =========================
+       显示选择框
+       ========================= */
+
+    .display-toggles {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+        margin-left: 50px;
+        color: #555b64;
+        font-size: 15px;
+        line-height: 20px;
+        user-select: none;
+    }
+
+    .display-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .display-toggle input {
+        width: 14px;
+        height: 14px;
+        margin: 0;
+        padding: 0;
+        accent-color: #1e4696;
+        cursor: pointer;
+    }
+
+    /* =========================
+       按钮
+       ========================= */
+
+    .buttons {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    button {
+        min-width: 70px;
+        padding: 9px 15px;
+        border-radius: 5px;
+        border: 1px solid #1e4696;
+        background: #ffffff;
+        color: #1e4696;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    button:hover {
+        background: #f0f4fb;
+    }
+
+    button:active {
+        transform: translateY(1px);
+    }
+
+    #start-button {
+        background: #1e4696;
+        color: #ffffff;
+    }
+
+    #start-button:hover {
+        background: #173a7d;
+    }
+
+    /* =========================
+       16:9 屏幕优化
+       ========================= */
+
+    @media (max-height: 900px) {
+
+        body {
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+
+        .title-area {
+            padding-top: 16px;
+            padding-bottom: 8px;
+        }
+
+        .title {
+            font-size: 23px;
+        }
+
+        .data-item {
+            padding-top: 13px;
+            padding-bottom: 15px;
+        }
+
+        .controls {
+            padding-top: 18px;
+            padding-bottom: 18px;
+        }
+
+        .parameters {
+            gap: 20px;
+        }
+
+    }
+
+    @media (max-width: 800px) {
+
+        .controls {
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        .buttons {
+            justify-content: flex-start;
+        }
+
+        .timeline-group {
+            right: 35px;
+            width: 220px;
+        }
+
+        .data-label,
+        .data-value {
+            font-size: 16px;
+        }
+
+        .gravity-row {
+            flex-wrap: wrap;
+        }
+
+        .display-toggles {
+            gap: 14px;
+        }
+
+    }
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <!-- =========================
+         标题
+         ========================= -->
+
+<!--     <div class="title-area">
+
+        <h1 class="title">
+            平抛运动
+        </h1>
+
+    </div> -->
+
+    <!-- =========================
+         场景
+         ========================= -->
+
+    <div class="scene-wrapper">
+
+        <!-- =====================
+             时间轴
+             ===================== -->
+
+        <div class="timeline-group">
+
+            <div class="timeline-label">
+
+                <span class="timeline-title">
+                    时间 t
+                </span>
+
+                <span
+                    id="time-value"
+                    class="timeline-max"
+                >
+                    0.00 s
+                </span>
+
+            </div>
+
+            <input
+                id="time-slider"
+                class="timeline"
+                type="range"
+                min="0"
+                max="2.26"
+                step="0.01"
+                value="0"
+            >
+
+        </div>
+
+        <svg
+            id="scene"
+            class="scene"
+            viewBox="0 0 1000 560"
+            preserveAspectRatio="xMidYMid meet"
+        >
+
+            <!-- =====================
+                 坐标轴
+                 ===================== -->
+
+            <line
+                class="axis"
+                x1="100"
+                y1="80"
+                x2="920"
+                y2="80"
+            />
+
+            <polygon
+                class="axis-arrow"
+                points="920,80 907,74 907,86"
+            />
+
+            <line
+                class="axis"
+                x1="100"
+                y1="80"
+                x2="100"
+                y2="500"
+            />
+
+            <polygon
+                class="axis-arrow"
+                points="100,500 94,487 106,487"
+            />
+
+            <!-- 坐标轴标签 -->
+
+            <text
+                class="axis-label"
+                x="930"
+                y="85"
+            >
+                x
+            </text>
+
+            <text
+                class="axis-label"
+                x="88"
+                y="520"
+            >
+                y
+            </text>
+
+            <!-- =====================
+                 坐标刻度
+                 ===================== -->
+
+            <g id="ticks"></g>
+
+            <!-- =====================
+                 抛物线
+                 ===================== -->
+
+            <path
+                id="trajectory"
+                class="trajectory"
+            />
+
+            <!-- =====================
+                 初始位置
+                 ===================== -->
+
+            <circle
+                id="initial-point"
+                class="initial-point"
+                cx="100"
+                cy="80"
+                r="6"
+            />
+
+            <!-- =====================
+                 水平位置投影点
+                 ===================== -->
+
+            <circle
+                id="horizontal-projection"
+                class="projection-point"
+                cx="100"
+                cy="80"
+                r="5"
+            />
+
+            <!-- =====================
+                 竖直位置投影点
+                 ===================== -->
+
+            <circle
+                id="vertical-projection"
+                class="projection-point"
+                cx="100"
+                cy="80"
+                r="5"
+            />
+
+            <!-- =====================
+                 位移矢量
+                 ===================== -->
+
+            <line
+                id="position-vector"
+                class="position-vector"
+                x1="100"
+                y1="80"
+                x2="100"
+                y2="80"
+            />
+
+            <polygon
+                id="position-arrow"
+                class="position-arrow"
+            />
+
+            <!-- =====================
+                 速度反向延长线
+                 ===================== -->
+
+            <line
+                id="velocity-extension"
+                class="velocity-extension"
+            />
+
+            <!-- =====================
+                 与 x 轴交点
+                 ===================== -->
+
+            <circle
+                id="extension-point"
+                class="extension-point"
+                cx="100"
+                cy="80"
+                r="5"
+            />
+
+            <!-- =====================
+                 交点坐标
+                 ===================== -->
+
+            <text
+                id="extension-label"
+                class="extension-label"
+                text-anchor="middle"
+            >
+                (0.00, 0)
+            </text>
+
+            <!-- =====================
+                 水平速度分量 vx
+                 ===================== -->
+
+            <line
+                id="vx-vector"
+                class="velocity-component"
+            />
+
+            <polygon
+                id="vx-arrow"
+                class="velocity-component-arrow"
+            />
+
+            <!-- =====================
+                 竖直速度分量 vy
+                 ===================== -->
+
+            <line
+                id="vy-vector"
+                class="velocity-component"
+            />
+
+            <polygon
+                id="vy-arrow"
+                class="velocity-component-arrow"
+            />
+
+            <!-- =====================
+                 速度合矢量 v
+                 ===================== -->
+
+            <line
+                id="velocity-vector"
+                class="velocity-vector"
+            />
+
+            <polygon
+                id="velocity-arrow"
+                class="velocity-arrow"
+            />
+
+            <!-- =====================
+                 速度标签
+                 ===================== -->
+
+            <text
+                id="v-label"
+                class="velocity-label"
+            >
+                v
+            </text>
+
+            <text
+                id="vx-label"
+                class="component-label"
+            >
+                vₓ
+            </text>
+
+            <text
+                id="vy-label"
+                class="component-label"
+            >
+                vᵧ
+            </text>
+
+            <!-- =====================
+                 速度角度 θ
+                 ===================== -->
+
+            <path
+                id="angle-arc"
+                class="angle-arc"
+            />
+
+            <text
+                id="angle-label"
+                class="angle-label"
+            >
+                θ
+            </text>
+
+            <!-- =====================
+                 运动物体
+                 ===================== -->
+
+            <circle
+                id="point"
+                class="point"
+                cx="100"
+                cy="80"
+                r="7"
+            />
+
+        </svg>
+
+    </div>
+
+    <!-- =========================
+         数据
+         ========================= -->
+
+    <div class="data-panel">
+
+        <div class="data-item">
+
+            <div class="data-label">
+                时间
+            </div>
+
+            <div
+                id="data-time-value"
+                class="data-value"
+            >
+                0.00 s
+            </div>
+
+        </div>
+
+        <div class="data-item">
+
+            <div class="data-label">
+                水平位移
+            </div>
+
+            <div
+                id="x-value"
+                class="data-value"
+            >
+                0.00 m
+            </div>
+
+        </div>
+
+        <div class="data-item">
+
+            <div class="data-label">
+                竖直位移
+            </div>
+
+            <div
+                id="y-value"
+                class="data-value"
+            >
+                0.00 m
+            </div>
+
+        </div>
+
+        <div class="data-item">
+
+            <div class="data-label">
+                水平速度
+            </div>
+
+            <div
+                id="vx-value"
+                class="data-value"
+            >
+                20.00 m/s
+            </div>
+
+        </div>
+
+        <div class="data-item">
+
+            <div class="data-label">
+                竖直速度
+            </div>
+
+            <div
+                id="vy-value"
+                class="data-value"
+            >
+                0.00 m/s
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- =========================
+         控制
+         ========================= -->
+
+    <div class="controls">
+
+        <div class="parameters">
+
+            <div class="control-row">
+
+                <label for="velocity-slider">
+                    初速度 v₀
+                </label>
+
+                <input
+                    id="velocity-slider"
+                    type="range"
+                    min="5"
+                    max="30"
+                    step="0.1"
+                    value="20"
+                >
+
+                <output id="velocity-value">
+                    20.0 m/s
+                </output>
+
+            </div>
+
+            <!-- =====================
+                 重力 + 三个显示选择框
+                 同一水平行
+                 ===================== -->
+
+            <div class="gravity-row">
+
+                <div class="gravity-title">
+                    重力加速度 g
+                </div>
+
+                <div class="gravity-options">
+
+                    <label>
+
+                        <input
+                            type="radio"
+                            name="gravity"
+                            value="9.8"
+                            checked
+                        >
+
+                        9.8 m/s²
+
+                    </label>
+
+                    <label>
+
+                        <input
+                            type="radio"
+                            name="gravity"
+                            value="10"
+                        >
+
+                        10 m/s²
+
+                    </label>
+
+                </div>
+
+                <div class="display-toggles">
+
+                    <label class="display-toggle">
+
+                        <input
+                            id="position-toggle"
+                            type="checkbox"
+                        >
+
+                        <span>
+                            位移矢量
+                        </span>
+
+                    </label>
+
+                    <label class="display-toggle">
+
+                        <input
+                            id="velocity-toggle"
+                            type="checkbox"
+                        >
+
+                        <span>
+                            速度矢量
+                        </span>
+
+                    </label>
+
+                    <label class="display-toggle">
+
+                        <input
+                            id="extension-toggle"
+                            type="checkbox"
+                        >
+
+                        <span>
+                            速度反向延长线
+                        </span>
+
+                    </label>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="buttons">
+
+            <button id="start-button">
+                开始
+            </button>
+
+            <button id="pause-button">
+                暂停
+            </button>
+
+            <button id="reset-button">
+                重置
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+(function () {
+
+    "use strict";
+
+    /* =========================================
+       DOM
+       ========================================= */
+
+    const velocitySlider =
+        document.getElementById(
+            "velocity-slider"
+        );
+
+    const timeSlider =
+        document.getElementById(
+            "time-slider"
+        );
+
+    const velocityValue =
+        document.getElementById(
+            "velocity-value"
+        );
+
+    const timeValue =
+        document.getElementById(
+            "time-value"
+        );
+
+    const dataTimeValue =
+        document.getElementById(
+            "data-time-value"
+        );
+
+    const xValue =
+        document.getElementById(
+            "x-value"
+        );
+
+    const yValue =
+        document.getElementById(
+            "y-value"
+        );
+
+    const vxValue =
+        document.getElementById(
+            "vx-value"
+        );
+
+    const vyValue =
+        document.getElementById(
+            "vy-value"
+        );
+
+    const trajectory =
+        document.getElementById(
+            "trajectory"
+        );
+
+    const point =
+        document.getElementById(
+            "point"
+        );
+
+    const initialPoint =
+        document.getElementById(
+            "initial-point"
+        );
+
+    const horizontalProjection =
+        document.getElementById(
+            "horizontal-projection"
+        );
+
+    const verticalProjection =
+        document.getElementById(
+            "vertical-projection"
+        );
+
+    const positionVector =
+        document.getElementById(
+            "position-vector"
+        );
+
+    const positionArrow =
+        document.getElementById(
+            "position-arrow"
+        );
+
+    const positionToggle =
+        document.getElementById(
+            "position-toggle"
+        );
+
+    /* =========================================
+       速度反向延长线
+       ========================================= */
+
+    const velocityExtension =
+        document.getElementById(
+            "velocity-extension"
+        );
+
+    const extensionPoint =
+        document.getElementById(
+            "extension-point"
+        );
+
+    const extensionLabel =
+        document.getElementById(
+            "extension-label"
+        );
+
+    const extensionToggle =
+        document.getElementById(
+            "extension-toggle"
+        );
+
+    /* =========================================
+       速度矢量
+       ========================================= */
+
+    const velocityVector =
+        document.getElementById(
+            "velocity-vector"
+        );
+
+    const velocityArrow =
+        document.getElementById(
+            "velocity-arrow"
+        );
+
+    const vxVector =
+        document.getElementById(
+            "vx-vector"
+        );
+
+    const vxArrow =
+        document.getElementById(
+            "vx-arrow"
+        );
+
+    const vyVector =
+        document.getElementById(
+            "vy-vector"
+        );
+
+    const vyArrow =
+        document.getElementById(
+            "vy-arrow"
+        );
+
+    const vLabel =
+        document.getElementById(
+            "v-label"
+        );
+
+    const vxLabel =
+        document.getElementById(
+            "vx-label"
+        );
+
+    const vyLabel =
+        document.getElementById(
+            "vy-label"
+        );
+
+    const velocityToggle =
+        document.getElementById(
+            "velocity-toggle"
+        );
+
+    const angleArc =
+        document.getElementById(
+            "angle-arc"
+        );
+
+    const angleLabel =
+        document.getElementById(
+            "angle-label"
+        );
+
+    const ticks =
+        document.getElementById(
+            "ticks"
+        );
+
+    const startButton =
+        document.getElementById(
+            "start-button"
+        );
+
+    const pauseButton =
+        document.getElementById(
+            "pause-button"
+        );
+
+    const resetButton =
+        document.getElementById(
+            "reset-button"
+        );
+
+    /* =========================================
+       物理参数
+       ========================================= */
+
+    let v0 = 20;
+
+    let g = 9.8;
+
+    let t = 0;
+
+    let isRunning = false;
+
+    let lastTimestamp = null;
+
+    let flightTime = 0;
+
+    /* =========================================
+       SVG 坐标
+       ========================================= */
+
+    const originX = 100;
+
+    const originY = 80;
+
+    const scaleX = 16;
+
+    const scaleY = 16;
+
+    function worldToSVG(x, y) {
+
+        return {
+
+            x:
+                originX
+                + x * scaleX,
+
+            y:
+                originY
+                + y * scaleY
+
+        };
+
+    }
+
+    /* =========================================
+       当前物理量
+       ========================================= */
+
+    function getPhysics() {
+
+        const x =
+            v0 * t;
+
+        const y =
+            0.5 * g * t * t;
+
+        const vx =
+            v0;
+
+        const vy =
+            g * t;
+
+        const speed =
+            Math.sqrt(
+                vx * vx
+                + vy * vy
+            );
+
+        const angle =
+            Math.atan2(
+                vy,
+                vx
+            );
+
+        return {
+
+            x,
+            y,
+            vx,
+            vy,
+            speed,
+            angle
+
+        };
+
+    }
+
+    /* =========================================
+       最大运动时间
+       ========================================= */
+
+    function calculateFlightTime() {
+
+        flightTime =
+            Math.sqrt(
+                50 / g
+            );
+
+    }
+
+    /* =========================================
+       时间轴
+       ========================================= */
+
+    function updateTimeSlider() {
+
+        timeSlider.max =
+            flightTime.toFixed(3);
+
+        timeSlider.value =
+            Math.min(
+                t,
+                flightTime
+            );
+
+        timeValue.textContent =
+            t.toFixed(2)
+            + " s";
+
+    }
+
+    /* =========================================
+       坐标刻度
+       ========================================= */
+
+    function createTicks() {
+
+        ticks.innerHTML = "";
+
+        /* 横轴 */
+
+        for (
+            let x = 0;
+            x <= 50;
+            x += 5
+        ) {
+
+            const p =
+                worldToSVG(
+                    x,
+                    0
+                );
+
+            const line =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "line"
+                );
+
+            line.setAttribute(
+                "class",
+                "tick"
+            );
+
+            line.setAttribute(
+                "x1",
+                p.x
+            );
+
+            line.setAttribute(
+                "y1",
+                p.y - 5
+            );
+
+            line.setAttribute(
+                "x2",
+                p.x
+            );
+
+            line.setAttribute(
+                "y2",
+                p.y + 5
+            );
+
+            ticks.appendChild(line);
+
+            if (x > 0) {
+
+                const text =
+                    document.createElementNS(
+                        "http://www.w3.org/2000/svg",
+                        "text"
+                    );
+
+                text.setAttribute(
+                    "class",
+                    "tick-label"
+                );
+
+                text.setAttribute(
+                    "x",
+                    p.x
+                );
+
+                text.setAttribute(
+                    "y",
+                    p.y - 12
+                );
+
+                text.setAttribute(
+                    "text-anchor",
+                    "middle"
+                );
+
+                text.textContent = x;
+
+                ticks.appendChild(text);
+
+            }
+
+        }
+
+        /* 纵轴 */
+
+        for (
+            let y = 0;
+            y <= 25;
+            y += 5
+        ) {
+
+            const p =
+                worldToSVG(
+                    0,
+                    y
+                );
+
+            const line =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "line"
+                );
+
+            line.setAttribute(
+                "class",
+                "tick"
+            );
+
+            line.setAttribute(
+                "x1",
+                p.x - 5
+            );
+
+            line.setAttribute(
+                "y1",
+                p.y
+            );
+
+            line.setAttribute(
+                "x2",
+                p.x + 5
+            );
+
+            line.setAttribute(
+                "y2",
+                p.y
+            );
+
+            ticks.appendChild(line);
+
+            if (y > 0) {
+
+                const text =
+                    document.createElementNS(
+                        "http://www.w3.org/2000/svg",
+                        "text"
+                    );
+
+                text.setAttribute(
+                    "class",
+                    "tick-label"
+                );
+
+                text.setAttribute(
+                    "x",
+                    p.x - 12
+                );
+
+                text.setAttribute(
+                    "y",
+                    p.y + 5
+                );
+
+                text.setAttribute(
+                    "text-anchor",
+                    "end"
+                );
+
+                text.textContent = y;
+
+                ticks.appendChild(text);
+
+            }
+
+        }
+
+    }
+
+    /* =========================================
+       抛物线
+       ========================================= */
+
+    function drawTrajectory() {
+
+        let d = "";
+
+        const samples = 200;
+
+        for (
+            let i = 0;
+            i <= samples;
+            i++
+        ) {
+
+            const tt =
+                flightTime
+                * i
+                / samples;
+
+            const x =
+                v0 * tt;
+
+            const y =
+                0.5 * g * tt * tt;
+
+            const p =
+                worldToSVG(
+                    x,
+                    y
+                );
+
+            if (i === 0) {
+
+                d +=
+                    `M ${p.x} ${p.y}`;
+
+            } else {
+
+                d +=
+                    ` L ${p.x} ${p.y}`;
+
+            }
+
+        }
+
+        trajectory.setAttribute(
+            "d",
+            d
+        );
+
+    }
+
+    /* =========================================
+       箭头
+       ========================================= */
+
+    function setArrow(
+        polygon,
+        x1,
+        y1,
+        x2,
+        y2,
+        size
+    ) {
+
+        const dx =
+            x2 - x1;
+
+        const dy =
+            y2 - y1;
+
+        const len =
+            Math.sqrt(
+                dx * dx
+                + dy * dy
+            );
+
+        if (len < 0.001) {
+
+            polygon.setAttribute(
+                "points",
+                ""
+            );
+
+            return;
+
+        }
+
+        const ux =
+            dx / len;
+
+        const uy =
+            dy / len;
+
+        const px =
+            -uy;
+
+        const py =
+            ux;
+
+        const bx =
+            x2 - ux * size;
+
+        const by =
+            y2 - uy * size;
+
+        const half =
+            size * 0.42;
+
+        const p1x =
+            x2;
+
+        const p1y =
+            y2;
+
+        const p2x =
+            bx + px * half;
+
+        const p2y =
+            by + py * half;
+
+        const p3x =
+            bx - px * half;
+
+        const p3y =
+            by - py * half;
+
+        polygon.setAttribute(
+            "points",
+            `${p1x},${p1y} `
+            + `${p2x},${p2y} `
+            + `${p3x},${p3y}`
+        );
+
+    }
+
+    /* =========================================
+       角度标记
+       ========================================= */
+
+    function updateAngleMarker(
+        p,
+        angle
+    ) {
+
+        const radius = 35;
+
+        const startX =
+            p.x + radius;
+
+        const startY =
+            p.y;
+
+        const endX =
+            p.x
+            + radius
+            * Math.cos(angle);
+
+        const endY =
+            p.y
+            + radius
+            * Math.sin(angle);
+
+        const largeArcFlag =
+            angle > Math.PI
+                ? 1
+                : 0;
+
+        angleArc.setAttribute(
+            "d",
+            `M ${startX} ${startY} `
+            + `A ${radius} ${radius} 0 `
+            + `${largeArcFlag} 1 `
+            + `${endX} ${endY}`
+        );
+
+        const middleAngle =
+            angle / 2;
+
+        angleLabel.setAttribute(
+            "x",
+            p.x
+            + (radius + 10)
+            * Math.cos(middleAngle)
+        );
+
+        angleLabel.setAttribute(
+            "y",
+            p.y
+            + (radius + 30)
+            * Math.sin(middleAngle)
+        );
+
+        angleLabel.textContent =
+            "θ";
+
+    }
+
+    /* =========================================
+       速度反向延长线
+       ========================================= */
+
+    function updateVelocityExtension(
+        p,
+        vx,
+        vy
+    ) {
+
+        const axisY =
+            originY;
+
+        /*
+           t = 0：
+           vy = 0
+        */
+
+        if (
+            Math.abs(vy) < 0.000001
+        ) {
+
+            const extensionLength =
+                70;
+
+            velocityExtension.setAttribute(
+                "x1",
+                p.x
+            );
+
+            velocityExtension.setAttribute(
+                "y1",
+                p.y
+            );
+
+            velocityExtension.setAttribute(
+                "x2",
+                p.x - extensionLength
+            );
+
+            velocityExtension.setAttribute(
+                "y2",
+                p.y
+            );
+
+            extensionPoint.setAttribute(
+                "cx",
+                p.x
+            );
+
+            extensionPoint.setAttribute(
+                "cy",
+                axisY
+            );
+
+            extensionLabel.setAttribute(
+                "x",
+                p.x
+            );
+
+            extensionLabel.setAttribute(
+                "y",
+                axisY - 30
+            );
+
+            extensionLabel.textContent =
+                "(0.00, 0)";
+
+            return;
+
+        }
+
+        const vxSVG =
+            vx * 3.2;
+
+        const vySVG =
+            vy * 3.2;
+
+        const intersectionX =
+            p.x
+            - (vxSVG / vySVG)
+            * (p.y - axisY);
+
+        const intersectionY =
+            axisY;
+
+        /* 反向延长线 */
+
+        velocityExtension.setAttribute(
+            "x1",
+            p.x
+        );
+
+        velocityExtension.setAttribute(
+            "y1",
+            p.y
+        );
+
+        velocityExtension.setAttribute(
+            "x2",
+            intersectionX
+        );
+
+        velocityExtension.setAttribute(
+            "y2",
+            intersectionY
+        );
+
+        /* 交点 */
+
+        extensionPoint.setAttribute(
+            "cx",
+            intersectionX
+        );
+
+        extensionPoint.setAttribute(
+            "cy",
+            intersectionY
+        );
+
+        /* 转换为物理坐标 */
+
+        const intersectionWorldX =
+            (
+                intersectionX
+                - originX
+            )
+            / scaleX;
+
+        extensionLabel.setAttribute(
+            "x",
+            intersectionX
+        );
+
+        extensionLabel.setAttribute(
+            "y",
+            intersectionY - 30
+        );
+
+        extensionLabel.setAttribute(
+            "fill",
+            "#d9090a"
+        );
+
+        extensionLabel.textContent =
+            `(${intersectionWorldX.toFixed(2)}, 0)`;
+
+    }
+
+    /* =========================================
+       更新场景
+       ========================================= */
+
+    function updateScene() {
+
+        const physics =
+            getPhysics();
+
+        const x =
+            Math.max(
+                0,
+                physics.x
+            );
+
+        const y =
+            Math.max(
+                0,
+                physics.y
+            );
+
+        const p =
+            worldToSVG(
+                x,
+                y
+            );
+
+        /* =========================
+           运动点
+           ========================= */
+
+        point.setAttribute(
+            "cx",
+            p.x
+        );
+
+        point.setAttribute(
+            "cy",
+            p.y
+        );
+
+        /* =========================
+           水平投影
+           ========================= */
+
+        const horizontal =
+            worldToSVG(
+                x,
+                0
+            );
+
+        horizontalProjection.setAttribute(
+            "cx",
+            horizontal.x
+        );
+
+        horizontalProjection.setAttribute(
+            "cy",
+            horizontal.y
+        );
+
+        /* =========================
+           竖直投影
+           ========================= */
+
+        const vertical =
+            worldToSVG(
+                0,
+                y
+            );
+
+        verticalProjection.setAttribute(
+            "cx",
+            vertical.x
+        );
+
+        verticalProjection.setAttribute(
+            "cy",
+            vertical.y
+        );
+
+        /* =========================
+           位移矢量
+           ========================= */
+
+        positionVector.setAttribute(
+            "x1",
+            originX
+        );
+
+        positionVector.setAttribute(
+            "y1",
+            originY
+        );
+
+        positionVector.setAttribute(
+            "x2",
+            p.x
+        );
+
+        positionVector.setAttribute(
+            "y2",
+            p.y
+        );
+
+        setArrow(
+            positionArrow,
+            originX,
+            originY,
+            p.x,
+            p.y,
+            11
+        );
+
+        /* =========================
+           位移显示控制
+           
+           位移矢量 + 两个投影点
+           ========================= */
+
+        const showPosition =
+            positionToggle.checked;
+
+        const positionDisplay =
+            showPosition
+                ? ""
+                : "none";
+
+        positionVector.style.display =
+            positionDisplay;
+
+        positionArrow.style.display =
+            positionDisplay;
+
+        horizontalProjection.style.display =
+            positionDisplay;
+
+        verticalProjection.style.display =
+            positionDisplay;
+
+        /* =========================
+           速度
+           ========================= */
+
+        const velocityScale =
+            3.2;
+
+        const vx =
+            physics.vx;
+
+        const vy =
+            physics.vy;
+
+        const speed =
+            physics.speed;
+
+        const vxSVG =
+            vx * velocityScale;
+
+        const vySVG =
+            vy * velocityScale;
+
+        const velocityEndX =
+            p.x + vxSVG;
+
+        const velocityEndY =
+            p.y + vySVG;
+
+        /* 合速度 */
+
+        velocityVector.setAttribute(
+            "x1",
+            p.x
+        );
+
+        velocityVector.setAttribute(
+            "y1",
+            p.y
+        );
+
+        velocityVector.setAttribute(
+            "x2",
+            velocityEndX
+        );
+
+        velocityVector.setAttribute(
+            "y2",
+            velocityEndY
+        );
+
+        setArrow(
+            velocityArrow,
+            p.x,
+            p.y,
+            velocityEndX,
+            velocityEndY,
+            12
+        );
+
+        /* v 标签 */
+
+        if (speed > 0.001) {
+
+            const velocityLength =
+                speed * velocityScale;
+
+            const ux =
+                vxSVG
+                / velocityLength;
+
+            const uy =
+                vySVG
+                / velocityLength;
+
+            vLabel.setAttribute(
+                "x",
+                velocityEndX
+                + ux * 18
+            );
+
+            vLabel.setAttribute(
+                "y",
+                velocityEndY
+                + uy * 18
+            );
+
+        }
+
+        /* =========================
+           速度反向延长线
+           ========================= */
+
+        updateVelocityExtension(
+            p,
+            vx,
+            vy
+        );
+
+        const extensionDisplay =
+            extensionToggle.checked
+                ? ""
+                : "none";
+
+        velocityExtension.style.display =
+            extensionDisplay;
+
+        extensionPoint.style.display =
+            extensionDisplay;
+
+        extensionLabel.style.display =
+            extensionDisplay;
+
+        /* =========================
+           vx
+           ========================= */
+
+        const vxEndX =
+            p.x + vxSVG;
+
+        const vxEndY =
+            p.y;
+
+        vxVector.setAttribute(
+            "x1",
+            p.x
+        );
+
+        vxVector.setAttribute(
+            "y1",
+            p.y
+        );
+
+        vxVector.setAttribute(
+            "x2",
+            vxEndX
+        );
+
+        vxVector.setAttribute(
+            "y2",
+            vxEndY
+        );
+
+        setArrow(
+            vxArrow,
+            p.x,
+            p.y,
+            vxEndX,
+            vxEndY,
+            9
+        );
+
+        vxLabel.setAttribute(
+            "x",
+            vxEndX + 6
+        );
+
+        vxLabel.setAttribute(
+            "y",
+            vxEndY + 17
+        );
+
+        /* =========================
+           vy
+           ========================= */
+
+        const vyEndX =
+            p.x;
+
+        const vyEndY =
+            p.y + vySVG;
+
+        vyVector.setAttribute(
+            "x1",
+            p.x
+        );
+
+        vyVector.setAttribute(
+            "y1",
+            p.y
+        );
+
+        vyVector.setAttribute(
+            "x2",
+            vyEndX
+        );
+
+        vyVector.setAttribute(
+            "y2",
+            vyEndY
+        );
+
+        setArrow(
+            vyArrow,
+            p.x,
+            p.y,
+            vyEndX,
+            vyEndY,
+            9
+        );
+
+        vyLabel.setAttribute(
+            "x",
+            vyEndX + 8
+        );
+
+        vyLabel.setAttribute(
+            "y",
+            vyEndY + 17
+        );
+
+        /* =========================
+           速度显示控制
+           
+           合速度 + vx + vy
+           + θ + 红色角度弧线
+           ========================= */
+
+        const showVelocity =
+            velocityToggle.checked;
+
+        const velocityDisplay =
+            showVelocity
+                ? ""
+                : "none";
+
+        velocityVector.style.display =
+            velocityDisplay;
+
+        velocityArrow.style.display =
+            velocityDisplay;
+
+        vLabel.style.display =
+            velocityDisplay;
+
+        vxVector.style.display =
+            velocityDisplay;
+
+        vxArrow.style.display =
+            velocityDisplay;
+
+        vxLabel.style.display =
+            velocityDisplay;
+
+        vyVector.style.display =
+            velocityDisplay;
+
+        vyArrow.style.display =
+            velocityDisplay;
+
+        vyLabel.style.display =
+            velocityDisplay;
+
+        angleArc.style.display =
+            velocityDisplay;
+
+        angleLabel.style.display =
+            velocityDisplay;
+
+        /* =========================
+           角度
+           ========================= */
+
+        updateAngleMarker(
+            p,
+            physics.angle
+        );
+
+        /* =========================
+           数据
+           ========================= */
+
+        dataTimeValue.textContent =
+            t.toFixed(2)
+            + " s";
+
+        xValue.textContent =
+            x.toFixed(2)
+            + " m";
+
+        yValue.textContent =
+            y.toFixed(2)
+            + " m";
+
+        vxValue.textContent =
+            vx.toFixed(2)
+            + " m/s";
+
+        vyValue.textContent =
+            vy.toFixed(2)
+            + " m/s";
+
+        /* =========================
+           时间
+           ========================= */
+
+        timeValue.textContent =
+            t.toFixed(2)
+            + " s";
+
+    }
+
+    /* =========================================
+       完整刷新
+       ========================================= */
+
+    function refresh() {
+
+        v0 =
+            parseFloat(
+                velocitySlider.value
+            );
+
+        g =
+            parseFloat(
+                document.querySelector(
+                    'input[name="gravity"]:checked'
+                ).value
+            );
+
+        velocityValue.textContent =
+            v0.toFixed(1)
+            + " m/s";
+
+        calculateFlightTime();
+
+        timeSlider.max =
+            flightTime.toFixed(3);
+
+        t = 0;
+
+        isRunning = false;
+
+        lastTimestamp = null;
+
+        drawTrajectory();
+
+        updateTimeSlider();
+
+        updateScene();
+
+    }
+
+    /* =========================================
+       动画
+       ========================================= */
+
+    function animate(timestamp) {
+
+        if (!isRunning) {
+            return;
+        }
+
+        if (lastTimestamp === null) {
+
+            lastTimestamp =
+                timestamp;
+
+            requestAnimationFrame(
+                animate
+            );
+
+            return;
+
+        }
+
+        const dt =
+            (
+                timestamp
+                - lastTimestamp
+            ) / 1000;
+
+        lastTimestamp =
+            timestamp;
+
+        t += dt;
+
+        if (
+            t >=
+            flightTime
+        ) {
+
+            t =
+                flightTime;
+
+            isRunning =
+                false;
+
+            lastTimestamp =
+                null;
+
+        }
+
+        updateTimeSlider();
+
+        updateScene();
+
+        if (isRunning) {
+
+            requestAnimationFrame(
+                animate
+            );
+
+        }
+
+    }
+
+    /* =========================================
+       开始
+       ========================================= */
+
+    startButton.addEventListener(
+        "click",
+        function () {
+
+            if (
+                t >=
+                flightTime - 0.0001
+            ) {
+
+                t = 0;
+
+            }
+
+            if (!isRunning) {
+
+                isRunning = true;
+
+                lastTimestamp = null;
+
+                requestAnimationFrame(
+                    animate
+                );
+
+            }
+
+        }
+    );
+
+    /* =========================================
+       暂停
+       ========================================= */
+
+    pauseButton.addEventListener(
+        "click",
+        function () {
+
+            isRunning = false;
+
+            lastTimestamp = null;
+
+        }
+    );
+
+    /* =========================================
+       重置
+       ========================================= */
+
+    resetButton.addEventListener(
+        "click",
+        function () {
+
+            isRunning = false;
+
+            lastTimestamp = null;
+
+            t = 0;
+
+            updateTimeSlider();
+
+            updateScene();
+
+        }
+    );
+
+    /* =========================================
+       时间轴
+       ========================================= */
+
+    timeSlider.addEventListener(
+        "input",
+        function () {
+
+            isRunning = false;
+
+            lastTimestamp = null;
+
+            t =
+                parseFloat(
+                    timeSlider.value
+                );
+
+            updateTimeSlider();
+
+            updateScene();
+
+        }
+    );
+
+    /* =========================================
+       初速度
+       ========================================= */
+
+    velocitySlider.addEventListener(
+        "input",
+        refresh
+    );
+
+    /* =========================================
+       重力
+       ========================================= */
+
+    document
+        .querySelectorAll(
+            'input[name="gravity"]'
+        )
+        .forEach(
+            function (radio) {
+
+                radio.addEventListener(
+                    "change",
+                    refresh
+                );
+
+            }
+        );
+
+    /* =========================================
+       位移矢量选择框
+       ========================================= */
+
+    positionToggle.addEventListener(
+        "change",
+        function () {
+
+            const display =
+                positionToggle.checked
+                    ? ""
+                    : "none";
+
+            positionVector.style.display =
+                display;
+
+            positionArrow.style.display =
+                display;
+
+            horizontalProjection.style.display =
+                display;
+
+            verticalProjection.style.display =
+                display;
+
+        }
+    );
+
+    /* =========================================
+       速度矢量选择框
+       ========================================= */
+
+    velocityToggle.addEventListener(
+        "change",
+        function () {
+
+            const display =
+                velocityToggle.checked
+                    ? ""
+                    : "none";
+
+            velocityVector.style.display =
+                display;
+
+            velocityArrow.style.display =
+                display;
+
+            vLabel.style.display =
+                display;
+
+            vxVector.style.display =
+                display;
+
+            vxArrow.style.display =
+                display;
+
+            vxLabel.style.display =
+                display;
+
+            vyVector.style.display =
+                display;
+
+            vyArrow.style.display =
+                display;
+
+            vyLabel.style.display =
+                display;
+
+            angleArc.style.display =
+                display;
+
+            angleLabel.style.display =
+                display;
+
+        }
+    );
+
+    /* =========================================
+       反向延长线选择框
+       ========================================= */
+
+    extensionToggle.addEventListener(
+        "change",
+        function () {
+
+            const display =
+                extensionToggle.checked
+                    ? ""
+                    : "none";
+
+            velocityExtension.style.display =
+                display;
+
+            extensionPoint.style.display =
+                display;
+
+            extensionLabel.style.display =
+                display;
+
+        }
+    );
+
+    /* =========================================
+       初始化
+       ========================================= */
+
+    createTicks();
+
+    refresh();
+
+})();
+
+</script>
+
+</body>
+</html>
